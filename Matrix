@@ -1,0 +1,250 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define SUCCESS 1
+#define FAILURE -1
+
+#define TRUE (1==1)
+#define FALSE (!TRUE)
+
+#define ADD_STR "ADD"
+#define END_STR "END"
+
+
+#define DEFAULT_CAP 5
+
+
+typedef struct ArrayList
+{
+   int size;
+   int cap;
+   int * values;
+} ArrayList;
+
+typedef struct ArrayArrayList
+{
+   int size;
+   int cap;
+   ArrayList * values;
+} ArrayArrayList;
+
+int expand(ArrayList *);
+int expand2(ArrayArrayList *);
+int add(ArrayList *, int);
+int add2(ArrayArrayList *);
+int findRow(ArrayArrayList * mat, int row);
+ArrayList * newArrayList();
+ArrayArrayList * newArrayArrayList();
+
+int expand(ArrayList * al)
+{
+   int newCap = al->cap * 2;
+   int * newValues = (int *) realloc(al->values, newCap * sizeof(int));
+   
+   // Check if allocation failed
+   if (newValues == NULL)
+   {
+      return FAILURE;
+   }
+   
+   // Update the array list
+   al->cap = newCap;
+   al->values = newValues;
+   
+   // Return a success!
+   return SUCCESS;
+}
+
+
+int expand2(ArrayArrayList * al)
+{
+   int newCap = al->cap * 2;
+   ArrayList * newValues = 
+      (ArrayList *) realloc(al->values, newCap * sizeof(ArrayList));
+   
+   // Check if allocation failed
+   if (newValues == NULL)
+   {
+      return FAILURE;
+   }
+   
+   // Update the array list
+   al->cap = newCap;
+   al->values = newValues;
+   
+   // Return a success!
+   return SUCCESS;
+}
+
+int add(ArrayList * al, int value)
+{
+   // Check if array list is full
+   if (al->cap == al->size)
+   {
+      
+      // Try to expand the array list
+      if (expand(al) == FAILURE)
+      {
+         return FAILURE;
+      }
+   }
+   
+   // Store the new value
+   al->values[al->size] = value;
+   al->size++;
+   
+   // Return a success
+   return SUCCESS;
+}
+
+int add2(ArrayArrayList * al)
+{
+   // Check if array list is full
+   if (al->cap == al->size)
+   {
+      
+      // Try to expand the array list
+      if (expand2(al) == FAILURE)
+      {
+         return FAILURE;
+      }
+   }
+   
+   // Initialize the new ArrayList
+   al->values[al->size].size = 0;
+   al->values[al->size].cap = DEFAULT_CAP;
+   al->values[al->size].values = (int *) calloc(DEFAULT_CAP, sizeof(int));
+   
+   if (al->values[al->size].values == NULL)
+   {
+      return FAILURE;
+   }
+   
+   // Increment the number of elements in our list
+   al->size++;
+   
+   // Return a success
+   return SUCCESS;
+}
+
+ArrayList * newArrayList()
+{
+   ArrayList * ret = (ArrayList *)calloc(1, sizeof(ArrayList));
+   
+   if (ret != NULL)
+   {
+      ret->values = (int *) calloc(DEFAULT_CAP, sizeof(int));
+      ret->cap = DEFAULT_CAP;
+      ret->size = 0;
+      
+      if (ret->values == NULL)
+      {
+         free(ret);
+         ret = NULL;
+      }
+   }
+   
+   return ret;
+}
+
+ArrayArrayList * newArrayArrayList()
+{
+   ArrayArrayList * ret = calloc(1, sizeof(ArrayArrayList));
+   
+   if (ret == NULL)
+      return ret;
+   
+   ret->size = 0;
+   ret->cap = DEFAULT_CAP;
+   // int ** arr2d = (int **) calloc(size, sizeof(int *));
+   ret->values = (ArrayList *) calloc(ret->cap, sizeof(ArrayList));
+   
+   if (ret->values == NULL)
+   {
+      free(ret);
+      ret = NULL;
+   }
+   
+   return ret;
+}
+
+int findRow(ArrayArrayList * mat, int row)
+{
+   int ret = FAILURE;
+   int i;
+   for (i = 0; i < mat->size; i++)
+   {
+      // matrix  aal        al
+      if (mat->values[i].values[0] == row)
+      {
+         // the row exists
+         return i;
+      }
+   }
+   
+   if (add2(mat) == FAILURE)
+   {
+      return FAILURE;
+   }
+   
+   ret = mat->size - 1;
+   
+   // We add the row index to the row of the ArrayArrayList
+   if (add(&mat->values[ret], row) == FAILURE)
+   {
+      return FAILURE;
+   }
+   
+   // Return the index created
+   return ret;
+}
+
+int main()
+{
+   int r, c, n;
+   scanf("%d %d %d", &r, &c, &n);
+   
+   ArrayArrayList * mat = newArrayArrayList();
+   
+   if (mat == NULL)
+   {
+      return 1;
+   }
+   
+   for (int i = 0; i < n; i++)
+   {
+      int val, rr, cc;
+      scanf("%d %d %d", &rr, &cc, &val);
+         
+      // Find the correct position in the mat->values
+      int rowInd = findRow(mat, rr);
+      
+      if (rowInd == FAILURE)
+      {
+         //freeArray(mat);
+         return 1;
+      }
+      
+      // This is wrong
+      if (add(&mat->values[rowInd], cc) == FAILURE ||
+         add(&mat->values[rowInd], val) == FAILURE)
+         return 1;
+   }
+   int i, j;
+   for (i = 0; i < mat->size; i++)
+   {
+      printf("Row %d\n", mat->values[i].values[0]);
+      for (j = 0; j * 2 + 2 < mat->values[i].size; j++)
+      {
+         // There are two values for each element in the matrix
+         // Offset by 1 for the col location
+         // Offset by 2 for the value 
+         printf("%d @ %d\n", mat->values[i].values[j * 2 + 2], 
+            mat->values[i].values[j * 2 + 1]);
+      }
+   }   
+   
+   return 0;
+}
